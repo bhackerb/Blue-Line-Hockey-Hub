@@ -1,0 +1,5 @@
+{
+  "name": "Blue Line Hockey Hub",
+  "description": "An aggregator for NHL hockey scores, highlights, and analytics, providing a one-stop-shop for fans. Data is sourced from the official NHL API, hockeystatcards.com, and dailyfaceoff.com.",
+  "requestFramePermissions": []
+}
