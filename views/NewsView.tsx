@@ -30,9 +30,9 @@ const NewsView: React.FC = () => {
 - 'imageUrl': A relevant image URL from the article (or a generic NHL image if none found).
 - 'source': The name of the news outlet.
 - 'publishedAt': The publication date/time in ISO format.`;
-                
+
                 const result = await ai.models.generateContent({
-                    model: 'gemini-3-flash-preview',
+                    model: 'gemini-2.5-flash',
                     contents: prompt,
                     config: {
                         tools: [{ googleSearch: {} }],
@@ -79,12 +79,12 @@ const NewsView: React.FC = () => {
     return (
         <div>
             <div className="text-center mb-10">
-                 <h2 className="text-4xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">The Daily Crease</h2>
-                 <p className="text-gray-400">Fresh headlines across the NHL world.</p>
+                <h2 className="text-4xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">The Daily Crease</h2>
+                <p className="text-gray-400">Fresh headlines across the NHL world.</p>
             </div>
             {loading && <LoadingSpinner text="Scouting news..." />}
             {error && <div className="text-center mb-6"><p className="inline-block text-red-500 bg-red-900/20 px-6 py-3 rounded-lg border border-red-500/50">{error}</p></div>}
-            
+
             {!loading && !error && displayedArticles.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {displayedArticles.map(article => (

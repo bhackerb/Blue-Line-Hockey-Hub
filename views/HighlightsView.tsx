@@ -26,9 +26,9 @@ const HighlightsView: React.FC = () => {
             try {
                 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
                 const prompt = `Find the 6 most recent official NHL game highlight videos on YouTube from the last 24 hours. Return a JSON array of objects with 'title' and 'videoId'.`;
-                
+
                 const result = await ai.models.generateContent({
-                    model: 'gemini-3-flash-preview',
+                    model: 'gemini-2.5-flash',
                     contents: prompt,
                     config: {
                         tools: [{ googleSearch: {} }],
@@ -67,12 +67,12 @@ const HighlightsView: React.FC = () => {
     return (
         <div className="pt-6">
             <div className="text-center mb-10">
-                 <h2 className="text-4xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-red-600">Latest Highlights</h2>
-                 <p className="text-gray-400">Catch up on the best action from around the league.</p>
+                <h2 className="text-4xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-red-600">Latest Highlights</h2>
+                <p className="text-gray-400">Catch up on the best action from around the league.</p>
             </div>
 
             {loading && <LoadingSpinner text="Scouting highlights..." />}
-            
+
             {error && (
                 <div className="text-center mb-6">
                     <p className="inline-block text-red-500 bg-red-900/20 px-6 py-3 rounded-lg border border-red-500/50">{error}</p>

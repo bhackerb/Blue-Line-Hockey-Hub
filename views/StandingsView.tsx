@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import type { StandingsData, DivisionStandings, TeamRecord } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-const StandingsTable: React.FC<{division: DivisionStandings}> = ({ division }) => (
+const StandingsTable: React.FC<{ division: DivisionStandings }> = ({ division }) => (
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden mb-8 ring-1 ring-gray-700/50">
         <h3 className="text-xl font-bold p-4 bg-gray-700/30 border-b border-gray-700/50">{division.divisionName}</h3>
         <div className="overflow-x-auto">
@@ -51,7 +51,7 @@ const StandingsView: React.FC = () => {
         const fetchStandings = async () => {
             setLoading(true);
             setError(null);
-            const apiUrl = 'https://api-web.nhle.com/v1/standings/now';
+            const apiUrl = 'https://corsproxy.io/?https://api-web.nhle.com/v1/standings/now';
             const url = apiUrl;
 
             try {
@@ -70,7 +70,7 @@ const StandingsView: React.FC = () => {
                     acc[conferenceName][divisionName].teamRecords.push(teamRecord);
                     return acc;
                 }, {});
-                
+
                 const finalStandings: StandingsData = {};
                 for (const conferenceName in groupedData) {
                     const divisions = Object.values(groupedData[conferenceName]);
@@ -91,12 +91,12 @@ const StandingsView: React.FC = () => {
     return (
         <div>
             <div className="text-center mb-10">
-                 <h2 className="text-4xl font-black mb-3">League Standings</h2>
-                 <p className="text-gray-400">Battle for the Stanley Cup Playoff seeding.</p>
+                <h2 className="text-4xl font-black mb-3">League Standings</h2>
+                <p className="text-gray-400">Battle for the Stanley Cup Playoff seeding.</p>
             </div>
             {loading && <LoadingSpinner text="Crunching numbers..." />}
             {error && <div className="text-center"><p className="inline-block text-red-500 bg-red-900/20 px-6 py-3 rounded-lg border border-red-500/50">{error}</p></div>}
-            
+
             {standings && Object.keys(standings).sort().map((conf) => (
                 <section key={conf} className="mb-12">
                     <h2 className="text-2xl font-black mb-6 flex items-center gap-3">

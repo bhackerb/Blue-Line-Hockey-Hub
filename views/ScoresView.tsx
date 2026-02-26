@@ -31,9 +31,9 @@ const ScoresView: React.FC = () => {
             setSelectedGameId(null);
         }
         setError(null);
-        
+
         const formattedDate = formatDateForAPI(date);
-        const apiUrl = `https://api-web.nhle.com/v1/schedule/${formattedDate}`;
+        const apiUrl = `https://corsproxy.io/?https://api-web.nhle.com/v1/schedule/${formattedDate}`;
         const url = apiUrl;
 
         try {
@@ -46,16 +46,16 @@ const ScoresView: React.FC = () => {
                     setGames([]);
                     return;
                 }
-                 throw new Error(`The NHL API returned an error (status: ${response.status}).`);
+                throw new Error(`The NHL API returned an error (status: ${response.status}).`);
             }
-            
+
             const data = await response.json().catch(() => {
                 throw new Error('Failed to parse schedule data. The API response was invalid.');
             });
 
             const dayData = data.gameWeek?.find((day: any) => day.date === formattedDate);
             const dailyGames = Array.isArray(dayData?.games) ? dayData.games : [];
-            
+
             setGames(dailyGames);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred while fetching games.');
@@ -70,7 +70,7 @@ const ScoresView: React.FC = () => {
     useEffect(() => {
         fetchGames(false);
     }, [fetchGames]);
-    
+
     useEffect(() => {
         const hasLiveGames = games.some(game => game.gameState === 'LIVE' || game.gameState === 'CRIT');
 
@@ -89,7 +89,7 @@ const ScoresView: React.FC = () => {
             {loading && <LoadingSpinner />}
             {error && <div className="text-center mb-6"><p className="inline-block text-red-500 bg-red-900/20 px-6 py-3 rounded-lg border border-red-500/50">{error}</p></div>}
             {!loading && !error && games.length === 0 && (
-                 <div className="text-center text-gray-400 mt-8 bg-gray-800/30 p-12 rounded-xl border border-gray-700/50">
+                <div className="text-center text-gray-400 mt-8 bg-gray-800/30 p-12 rounded-xl border border-gray-700/50">
                     <h3 className="text-2xl font-bold mb-2">No Games Scheduled</h3>
                     <p>There are no games scheduled for this date.</p>
                 </div>
@@ -97,12 +97,12 @@ const ScoresView: React.FC = () => {
             <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
                 {games.map(game => (
                     <React.Fragment key={game.id}>
-                        <GameCard 
-                            game={game} 
+                        <GameCard
+                            game={game}
                             onSelect={() => handleGameSelect(game.id)}
                             isSelected={selectedGameId === game.id}
                         />
-                         {selectedGameId === game.id && (
+                        {selectedGameId === game.id && (
                             <div className="lg:col-span-2">
                                 <GameDetailsView game={game} />
                             </div>
