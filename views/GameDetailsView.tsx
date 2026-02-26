@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 import type { Game, BoxscoreData, ScoringPlay, Penalty, TeamGameStat, PlayerByGameStats, PlayerGameStat } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -18,7 +18,6 @@ const TeamStatsDisplay: React.FC<{ game: Game; stats: TeamGameStat[] }> = ({ gam
         takeaways: 'Takeaways'
     };
 
-    // Filter to ensure we only show categories we have mapped, or show capitalized category
     const displayStats = stats.filter(s => categories[s.category] || s.category);
 
     return (
@@ -49,8 +48,6 @@ const TeamStatsDisplay: React.FC<{ game: Game; stats: TeamGameStat[] }> = ({ gam
 };
 
 const PlayerStatsTable: React.FC<{ players: PlayerGameStat[]; type: 'skaters' | 'goalies' }> = ({ players, type }) => {
-    // Sort skaters by Points (desc), then Goals (desc)
-    // Sort goalies by Saves (desc)
     const sortedPlayers = [...(players || [])].sort((a, b) => {
         if (type === 'skaters') {
             if (b.points !== a.points) return b.points - a.points;
@@ -139,55 +136,6 @@ const PlayerStatsTable: React.FC<{ players: PlayerGameStat[]; type: 'skaters' | 
     );
 };
 
-const PlayerStatsDisplay: React.FC<{ game: Game; stats: PlayerByGameStats }> = ({ game, stats }) => {
-    const [activeTeam, setActiveTeam] = useState<'away' | 'home'>('away');
-
-    if (!stats) return null;
-
-    const activeStats = activeTeam === 'away' ? stats.awayTeam : stats.homeTeam;
-    
-    // Defensive coding to prevent spread errors if arrays are missing
-    const skaters = [
-        ...(activeStats?.forwards || []), 
-        ...(activeStats?.defense || [])
-    ];
-    const goalies = activeStats?.goalies || [];
-
-    return (
-        <div className="bg-gray-800/40 rounded-lg p-4">
-             <div className="flex items-center justify-between mb-4 border-b border-gray-700 pb-2">
-                <h3 className="text-lg font-bold">Player Stats</h3>
-                <div className="flex space-x-2 bg-gray-700/50 p-1 rounded-lg">
-                    <button
-                        onClick={() => setActiveTeam('away')}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTeam === 'away' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        {game.awayTeam.abbrev}
-                    </button>
-                    <button
-                        onClick={() => setActiveTeam('home')}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${activeTeam === 'home' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        {game.homeTeam.abbrev}
-                    </button>
-                </div>
-            </div>
-
-            <div className="mb-6">
-                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Skaters</h4>
-                <PlayerStatsTable players={skaters} type="skaters" />
-            </div>
-
-            {goalies.length > 0 && (
-                <div>
-                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Goalies</h4>
-                    <PlayerStatsTable players={goalies} type="goalies" />
-                </div>
-            )}
-        </div>
-    );
-};
-
 const ScoringPlaysDisplay: React.FC<{ plays: ScoringPlay[], game: Game }> = ({ plays, game }) => {
     if (!plays || !Array.isArray(plays) || plays.length === 0) {
         return (
@@ -207,7 +155,6 @@ const ScoringPlaysDisplay: React.FC<{ plays: ScoringPlay[], game: Game }> = ({ p
         return acc;
     }, {} as Record<number, ScoringPlay[]>);
 
-    // Use filtered numeric keys to avoid NaN if period is missing
     const periods = Object.keys(playsByPeriod).map(Number).filter(p => !isNaN(p)).sort((a, b) => a - b);
 
     const getPeriodName = (period: number) => {
@@ -250,8 +197,8 @@ const ScoringPlaysDisplay: React.FC<{ plays: ScoringPlay[], game: Game }> = ({ p
                                                 onError={(e) => { (e.target as HTMLImageElement).src = 'https://assets.nhle.com/logos/nhl/svg/NHL_light.svg'; }}
                                             />
                                             <span className="font-bold text-white">{play.goalScorer.name.default}</span>
-                                            {play.strength !== 'ev' && (
-                                                <span className="text-[10px] font-bold bg-gray-600 text-white px-1.5 py-0.5 rounded uppercase">{play.strength}</span>
+                                            {play.strength && play.strength.toLowerCase() !== 'ev' && (
+                                                <span className="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded uppercase">{play.strength}</span>
                                             )}
                                          </div>
                                          <div className="text-sm text-gray-400">
@@ -268,7 +215,6 @@ const ScoringPlaysDisplay: React.FC<{ plays: ScoringPlay[], game: Game }> = ({ p
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                             className="ml-2 p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-full transition-colors"
-                                            aria-label="Watch Highlight"
                                          >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -286,15 +232,62 @@ const ScoringPlaysDisplay: React.FC<{ plays: ScoringPlay[], game: Game }> = ({ p
     );
 };
 
+// FIX: Added the missing PlayerStatsDisplay component.
+const PlayerStatsDisplay: React.FC<{ game: Game; stats: PlayerByGameStats }> = ({ game, stats }) => {
+    const [activeTeam, setActiveTeam] = useState<'away' | 'home'>('away');
+
+    const currentTeamStats = activeTeam === 'away' ? stats.awayTeam : stats.homeTeam;
+
+    return (
+        <div className="bg-gray-800/40 rounded-lg p-4">
+            <h3 className="text-lg font-bold mb-4 border-b border-gray-700 pb-2">Player Stats</h3>
+            
+            <div className="flex mb-4 bg-gray-700/30 p-1 rounded-lg">
+                <button 
+                    onClick={() => setActiveTeam('away')}
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-bold transition-all ${activeTeam === 'away' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                >
+                    {game.awayTeam.abbrev}
+                </button>
+                <button 
+                    onClick={() => setActiveTeam('home')}
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-bold transition-all ${activeTeam === 'home' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                >
+                    {game.homeTeam.abbrev}
+                </button>
+            </div>
+
+            <div className="space-y-8">
+                <div>
+                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 pl-2 border-l-4 border-blue-500">Skaters</h4>
+                    <PlayerStatsTable 
+                        players={[
+                            ...(currentTeamStats.forwards || []), 
+                            ...(currentTeamStats.defense || [])
+                        ]} 
+                        type="skaters" 
+                    />
+                </div>
+                <div>
+                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 pl-2 border-l-4 border-blue-500">Goalies</h4>
+                    <PlayerStatsTable 
+                        players={currentTeamStats.goalies || []} 
+                        type="goalies" 
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const GameDetailsView: React.FC<{ game: Game }> = ({ game }) => {
     const [boxscore, setBoxscore] = useState<BoxscoreData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // State for AI Quick Summary
     const [aiQuickSummary, setAiQuickSummary] = useState('');
     const [loadingAiQuickSummary, setLoadingAiQuickSummary] = useState(false);
     const [aiQuickError, setAiQuickError] = useState<string | null>(null);
+    const [highlightVideoId, setHighlightVideoId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchGameDetails = async () => {
@@ -303,17 +296,19 @@ const GameDetailsView: React.FC<{ game: Game }> = ({ game }) => {
             setBoxscore(null);
             setAiQuickSummary('');
             setAiQuickError(null);
+            setHighlightVideoId(null);
             
             try {
-                const landingUrl = `https://corsproxy.io/?${encodeURIComponent(`https://api-web.nhle.com/v1/gamecenter/${game.id}/landing`)}`;
-                const landingResponse = await fetch(landingUrl);
+                const apiUrl = `https://api-web.nhle.com/v1/gamecenter/${game.id}/landing`;
+                const url = apiUrl;
+                const landingResponse = await fetch(url);
                 if (!landingResponse.ok) throw new Error(`Failed to fetch game data (status: ${landingResponse.status}).`);
                 const landingData = await landingResponse.json();
 
-                // Defensive mapping for scoring plays
-                const scoringPlays: ScoringPlay[] = (Array.isArray(landingData.summary?.scoring) ? landingData.summary.scoring : []).flatMap((periodScoring: any) => 
-                    (Array.isArray(periodScoring.goals) ? periodScoring.goals : []).map((goal: any): ScoringPlay => ({
-                        period: periodScoring.periodDescriptor?.number || periodScoring.period,
+                const scoringPlays: ScoringPlay[] = (Array.isArray(landingData.summary?.scoring) ? landingData.summary.scoring : []).flatMap((periodScoring: any) => {
+                    const periodNum = periodScoring.periodDescriptor?.number ?? periodScoring.period ?? 0;
+                    return (Array.isArray(periodScoring.goals) ? periodScoring.goals : []).map((goal: any): ScoringPlay => ({
+                        period: periodNum,
                         timeInPeriod: goal.timeInPeriod,
                         goalScorer: {
                             name: goal.name,
@@ -326,20 +321,20 @@ const GameDetailsView: React.FC<{ game: Game }> = ({ game }) => {
                         video: goal.video,
                         awayScore: goal.awayScore,
                         homeScore: goal.homeScore
-                    }))
-                );
+                    }));
+                });
 
-                // Defensive mapping for penalties
-                const penalties: Penalty[] = (Array.isArray(landingData.summary?.penaltiesByPeriod) ? landingData.summary.penaltiesByPeriod : []).flatMap((periodPenalties: any) =>
-                    (Array.isArray(periodPenalties.penalties) ? periodPenalties.penalties : []).map((penalty: any): Penalty => ({
-                        period: periodPenalties.periodDescriptor?.number || periodPenalties.period,
+                const penalties: Penalty[] = (Array.isArray(landingData.summary?.penaltiesByPeriod) ? landingData.summary.penaltiesByPeriod : []).flatMap((periodPenalties: any) => {
+                    const periodNum = periodPenalties.periodDescriptor?.number ?? periodPenalties.period ?? 0;
+                    return (Array.isArray(periodPenalties.penalties) ? periodPenalties.penalties : []).map((penalty: any): Penalty => ({
+                        period: periodNum,
                         timeInPeriod: penalty.timeInPeriod,
                         type: penalty.desc,
                         duration: penalty.duration,
                         committedByPlayer: penalty.name,
                         teamAbbrev: penalty.teamAbbrev,
-                    }))
-                );
+                    }));
+                });
 
                 const mapPlayer = (p: any): PlayerGameStat => ({
                     playerId: p.playerId,
@@ -363,7 +358,6 @@ const GameDetailsView: React.FC<{ game: Game }> = ({ game }) => {
                 });
 
                 const rawPlayers = landingData.boxscore?.playerByGameStats;
-                
                 const playerByGameStats: PlayerByGameStats | undefined = rawPlayers ? {
                     awayTeam: {
                         forwards: Array.isArray(rawPlayers.awayTeam?.forwards) ? rawPlayers.awayTeam.forwards.map(mapPlayer) : [],
@@ -399,47 +393,42 @@ const GameDetailsView: React.FC<{ game: Game }> = ({ game }) => {
     }, [game.id]);
 
     const generateAiQuickSummary = useCallback(async () => {
-        if (!boxscore || !process.env.API_KEY) {
-             if (!process.env.API_KEY) {
-                 setAiQuickError("API key is not configured.");
-             }
-            return;
-        }
-
+        if (!boxscore || !process.env.API_KEY) return;
         setLoadingAiQuickSummary(true);
         setAiQuickError(null);
-
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            
-            // Ensure we're mapping over an array
             const scoringSummary = (boxscore.summary.scoring || []).map(p => 
-                `Period ${p.period} at ${p.timeInPeriod}: ${p.goalScorer.name.default} (${p.teamAbbrev.default}) scored. Assists: ${(Array.isArray(p.goalScorer.assists) ? p.goalScorer.assists : []).map(a => a.name.default).join(', ') || 'None'}.`
+                `P${p.period} ${p.timeInPeriod}: ${p.goalScorer.name.default} (${p.teamAbbrev.default})`
             ).join('\n');
             
-            const prompt = `
-            You are an expert NHL analyst. Provide a quick summary of the game between ${game.awayTeam.name.default} and ${game.homeTeam.name.default}.
-            Final Score: ${game.awayTeam.name.default} ${game.awayTeam.score} - ${game.homeTeam.name.default} ${game.homeTeam.score}.
-
-            Scoring Plays:
-            ${scoringSummary}
-
-            Generate 3 concise bullet points highlighting the key outcomes.
-            `;
-
-            const result = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-            });
-            
+            // Get summary
+            const prompt = `Summarize: ${game.awayTeam.name.default} ${game.awayTeam.score} @ ${game.homeTeam.name.default} ${game.homeTeam.score}. Plays:\n${scoringSummary}\nGive 3 short bullet points.`;
+            const result = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt });
             setAiQuickSummary(result.text);
 
-        } catch (e: any) {
-             if (e.message?.includes('429') || e.message?.includes('quota')) {
-                setAiQuickError('Quota exceeded.');
-            } else {
-                setAiQuickError('Failed to generate summary.');
+            // Get highlight video
+            if (game.gameState === 'FINAL' || game.gameState === 'OFF') {
+                const videoPrompt = `Find the official NHL YouTube highlight video for the game between ${game.awayTeam.name.default} and ${game.homeTeam.name.default} on ${game.startTimeUTC}. Return a JSON object with a single property 'videoId' containing the YouTube video ID. If not found, return null for videoId.`;
+                const videoResult = await ai.models.generateContent({
+                    model: 'gemini-3-flash-preview',
+                    contents: videoPrompt,
+                    config: {
+                        tools: [{ googleSearch: {} }],
+                        responseMimeType: 'application/json',
+                        responseSchema: {
+                            type: Type.OBJECT,
+                            properties: { videoId: { type: Type.STRING, nullable: true } }
+                        }
+                    }
+                });
+                const parsedVideo = JSON.parse(videoResult.text);
+                if (parsedVideo && parsedVideo.videoId) {
+                    setHighlightVideoId(parsedVideo.videoId);
+                }
             }
+        } catch (e: any) {
+            setAiQuickError('Summary generation failed.');
         } finally {
             setLoadingAiQuickSummary(false);
         }
@@ -451,7 +440,6 @@ const GameDetailsView: React.FC<{ game: Game }> = ({ game }) => {
         }
     }, [boxscore, generateAiQuickSummary, aiQuickSummary, loadingAiQuickSummary, aiQuickError]);
 
-
     return (
         <div id={`game-details-${game.id}`} className="bg-gray-900/50 backdrop-blur-md rounded-b-xl -mt-2 p-4 md:p-6 ring-1 ring-blue-500/80 shadow-2xl animate-fade-in-down">
             {loading && <LoadingSpinner text="Loading game details..."/>}
@@ -459,14 +447,21 @@ const GameDetailsView: React.FC<{ game: Game }> = ({ game }) => {
             
             {!loading && !error && boxscore && (
                 <div className="space-y-6">
-                    <AiQuickSummary 
-                        summary={aiQuickSummary} 
-                        loading={loadingAiQuickSummary} 
-                        error={aiQuickError} 
-                    />
-                    
-                    {boxscore.summary?.scoring && <ScoringPlaysDisplay plays={boxscore.summary.scoring} game={game} />}
-
+                    {highlightVideoId && (
+                        <div className="bg-gray-800/40 rounded-lg overflow-hidden shadow-lg ring-1 ring-gray-700/50">
+                            <div className="relative pt-[56.25%]">
+                                <iframe
+                                    className="absolute top-0 left-0 w-full h-full"
+                                    src={`https://www.youtube.com/embed/${highlightVideoId}`}
+                                    title="Game Highlights"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                ></iframe>
+                            </div>
+                        </div>
+                    )}
+                    <AiQuickSummary summary={aiQuickSummary} loading={loadingAiQuickSummary} error={aiQuickError} />
+                    <ScoringPlaysDisplay plays={boxscore.summary.scoring} game={game} />
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="lg:col-span-2">
                             {boxscore.teamGameStats && <TeamStatsDisplay game={game} stats={boxscore.teamGameStats} />}
@@ -477,37 +472,21 @@ const GameDetailsView: React.FC<{ game: Game }> = ({ game }) => {
                     </div>
                 </div>
             )}
-             {!loading && !error && !boxscore && (
-                 <p className="text-center text-gray-400 p-8">No detailed data available for this game.</p>
-            )}
         </div>
     );
 };
 
-const AiQuickSummary: React.FC<{
-    summary: string;
-    loading: boolean;
-    error: string | null;
-}> = ({ summary, loading, error }) => {
-    if (loading) return <div className="bg-gray-800/40 rounded-lg p-6 flex justify-center"><LoadingSpinner text="Generating summary..." /></div>;
-    if (error) return null; 
-
+const AiQuickSummary: React.FC<{ summary: string; loading: boolean; error: string | null; }> = ({ summary, loading, error }) => {
+    if (loading) return <div className="bg-gray-800/40 rounded-lg p-6 flex justify-center"><LoadingSpinner text="Analyzing..." /></div>;
+    if (error || !summary) return null; 
     return (
-        <div className="bg-gray-800/40 rounded-lg p-6">
-            <h3 className="text-xl font-bold text-center mb-4 text-blue-400">AI Quick Summary</h3>
-            {!summary ? (
-                 <p className="text-gray-400 text-center">Summary unavailable.</p>
-            ) : (
-                <ul className="list-disc list-inside text-gray-300 text-left space-y-2">
-                    {summary.split('\n')
-                        .map(item => item.trim())
-                        .filter(item => item)
-                        .map((item, index) => (
-                            <li key={index}>{item.replace(/^\s*[\*-]\s*/, '')}</li>
-                        ))
-                    }
-                </ul>
-            )}
+        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6">
+            <h3 className="text-xl font-bold text-center mb-4 text-blue-400">Game Insights</h3>
+            <ul className="list-disc list-inside text-gray-300 text-left space-y-2">
+                {summary.split('\n').map(item => item.trim()).filter(item => item).map((item, index) => (
+                    <li key={index}>{item.replace(/^\s*[\*-]\s*/, '')}</li>
+                ))}
+            </ul>
         </div>
     );
 };

@@ -1,6 +1,6 @@
 
 // FIX: Define all necessary types for the application to resolve import errors.
-export type Tab = 'scores' | 'news' | 'highlights' | 'standings' | 'analytics' | 'statCards' | 'lineups' | 'puckpedia';
+export type Tab = 'scores' | 'news' | 'highlights' | 'standings' | 'moneypuck' | 'naturalStatTrick' | 'statCards' | 'lineups' | 'puckpedia';
 
 export interface Team {
   id: number;
@@ -41,6 +41,9 @@ export interface TeamRecord {
     otLosses: number;
     gamesPlayed: number;
     clinchIndicator?: string;
+    goalFor?: number;
+    goalAgainst?: number;
+    goalDifferential?: number;
 }
 
 export interface DivisionStandings {

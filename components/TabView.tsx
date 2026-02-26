@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { Tab } from '../types';
 
@@ -12,7 +13,8 @@ const TabView: React.FC<TabViewProps> = ({ activeTab, setActiveTab }) => {
     { id: 'news', label: 'News' },
     { id: 'highlights', label: 'Highlights' },
     { id: 'standings', label: 'Standings' },
-    { id: 'analytics', label: 'Analytics' },
+    { id: 'moneypuck', label: 'MoneyPuck' },
+    { id: 'naturalStatTrick', label: 'Natural Stat Trick' },
     { id: 'statCards', label: 'Stat Cards' },
     { id: 'lineups', label: 'Lineups & Goalies' },
     { id: 'puckpedia', label: 'Puckpedia' },
@@ -22,7 +24,6 @@ const TabView: React.FC<TabViewProps> = ({ activeTab, setActiveTab }) => {
     <nav className="bg-gray-800/50 backdrop-blur-lg sticky top-0 z-20 border-y border-gray-700/50">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
         <div className="relative flex items-center justify-center h-16">
-            {/* FIX: React's style prop requires camelCase for CSS properties like 'msOverflowStyle' and does not support pseudo-elements like '::-webkit-scrollbar'. */}
             <div className="w-full overflow-x-auto whitespace-nowrap" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
                 <div className="flex items-baseline justify-center space-x-2 md:space-x-4">
                   {tabs.map((tab) => (

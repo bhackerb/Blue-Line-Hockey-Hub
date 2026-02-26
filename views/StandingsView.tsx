@@ -4,11 +4,11 @@ import type { StandingsData, DivisionStandings, TeamRecord } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const StandingsTable: React.FC<{division: DivisionStandings}> = ({ division }) => (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden mb-8 ring-1 ring-gray-700/50">
-        <h3 className="text-xl font-bold p-4 bg-gray-700/30">{division.divisionName}</h3>
+    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden mb-8 ring-1 ring-gray-700/50">
+        <h3 className="text-xl font-bold p-4 bg-gray-700/30 border-b border-gray-700/50">{division.divisionName}</h3>
         <div className="overflow-x-auto">
             <table className="min-w-full text-sm text-left">
-                <thead className="bg-gray-700/50 text-xs text-gray-300 uppercase tracking-wider">
+                <thead className="bg-gray-700/50 text-xs text-gray-400 uppercase tracking-widest">
                     <tr>
                         <th scope="col" className="px-4 py-3 text-center">#</th>
                         <th scope="col" className="px-4 py-3">Team</th>
@@ -19,21 +19,21 @@ const StandingsTable: React.FC<{division: DivisionStandings}> = ({ division }) =
                         <th scope="col" className="px-4 py-3 text-center">PTS</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-700/30">
                     {division.teamRecords.map((team: TeamRecord, index: number) => (
-                        <tr key={team.teamName?.default} className={`border-b border-gray-700/50 transition-colors duration-200 ${index % 2 === 0 ? 'bg-gray-800/20' : 'bg-transparent'} hover:bg-gray-700/50`}>
-                            <td className="px-4 py-2 font-medium text-center">{team.divisionRank}</td>
-                            <td className="px-4 py-2 font-semibold">
+                        <tr key={team.teamAbbrev.default} className={`transition-colors duration-200 ${index % 2 === 0 ? 'bg-gray-800/10' : 'bg-transparent'} hover:bg-gray-700/40`}>
+                            <td className="px-4 py-4 text-center text-gray-400 font-medium">{team.divisionRank}</td>
+                            <td className="px-4 py-4">
                                 <div className="flex items-center space-x-3">
-                                    <img src={`https://assets.nhle.com/logos/nhl/svg/${team.teamAbbrev.default}_light.svg`} alt={`${team.teamName?.default} logo`} className="h-6 w-6 object-contain" />
-                                    <span>{team.teamName?.default} {team.clinchIndicator && ` - ${team.clinchIndicator}`}</span>
+                                    <img src={`https://assets.nhle.com/logos/nhl/svg/${team.teamAbbrev.default}_light.svg`} alt={team.teamAbbrev.default} className="h-6 w-6 object-contain" />
+                                    <span className="font-bold">{team.teamName?.default} {team.clinchIndicator && <span className="text-[10px] ml-1 px-1 bg-green-900/50 text-green-400 rounded ring-1 ring-green-500/30">{team.clinchIndicator}</span>}</span>
                                 </div>
                             </td>
-                            <td className="px-4 py-2 text-center">{team.gamesPlayed}</td>
-                            <td className="px-4 py-2 text-center">{team.wins}</td>
-                            <td className="px-4 py-2 text-center">{team.losses}</td>
-                            <td className="px-4 py-2 text-center">{team.otLosses}</td>
-                            <td className="px-4 py-2 font-bold text-center">{team.points}</td>
+                            <td className="px-4 py-4 text-center">{team.gamesPlayed}</td>
+                            <td className="px-4 py-4 text-center">{team.wins}</td>
+                            <td className="px-4 py-4 text-center">{team.losses}</td>
+                            <td className="px-4 py-4 text-center">{team.otLosses}</td>
+                            <td className="px-4 py-4 font-black text-center text-blue-400">{team.points}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -51,98 +51,64 @@ const StandingsView: React.FC = () => {
         const fetchStandings = async () => {
             setLoading(true);
             setError(null);
-            const originalUrl = 'https://api-web.nhle.com/v1/standings/now';
-            const url = `https://corsproxy.io/?${encodeURIComponent(originalUrl)}`;
+            const apiUrl = 'https://api-web.nhle.com/v1/standings/now';
+            const url = apiUrl;
 
             try {
-                const response = await fetch(url).catch(() => {
-                     throw new Error('Could not connect to the data proxy. The service may be temporarily unavailable.');
-                });
-
-                if (!response.ok) {
-                    throw new Error(`The data proxy or NHL API returned an error (status: ${response.status}).`);
-                }
-                
-                const data = await response.json().catch(() => {
-                    throw new Error('Failed to parse data from the NHL API. The API may have returned an invalid format.');
-                });
-                
+                const response = await fetch(url).catch(() => { throw new Error('Network connection failed.'); });
+                if (!response.ok) throw new Error(`HTTP ${response.status}: API error`);
+                const data = await response.json();
                 const allTeamRecords: any[] = Array.isArray(data.standings) ? data.standings : [];
 
-                // Group teams by conference and then by division from the flat API response
                 const groupedData = allTeamRecords.reduce((acc, teamRecord) => {
-                    // Defensively check the structure of teamRecord
-                    if (!teamRecord || typeof teamRecord !== 'object') {
-                        return acc;
-                    }
-
-                    const { conferenceName, divisionName, teamName } = teamRecord;
-
-                    // Skip records that aren't in a specific division or are missing essential data
-                    if (!conferenceName || !divisionName || !teamName || !teamName.default) {
-                        return acc;
-                    }
-
-                    if (!acc[conferenceName]) {
-                        acc[conferenceName] = {};
-                    }
+                    const { conferenceName, divisionName } = teamRecord;
+                    if (!conferenceName || !divisionName) return acc;
+                    if (!acc[conferenceName]) acc[conferenceName] = {};
                     if (!acc[conferenceName][divisionName]) {
-                        acc[conferenceName][divisionName] = {
-                            divisionName: divisionName,
-                            conferenceName: conferenceName,
-                            teamRecords: [],
-                        };
+                        acc[conferenceName][divisionName] = { divisionName, conferenceName, teamRecords: [] };
                     }
                     acc[conferenceName][divisionName].teamRecords.push(teamRecord);
                     return acc;
                 }, {});
                 
-                // Convert the nested object into the final structure expected by the component
                 const finalStandings: StandingsData = {};
                 for (const conferenceName in groupedData) {
                     const divisions = Object.values(groupedData[conferenceName]);
-                    
-                    // Sort teams within each division by their rank
-                    divisions.forEach((division: any) => {
-                        division.teamRecords.sort((a: any, b: any) => parseInt(a.divisionRank) - parseInt(b.divisionRank));
-                    });
-
-                    // Sort divisions alphabetically (e.g., Atlantic, Central, etc.)
+                    divisions.forEach((div: any) => div.teamRecords.sort((a: any, b: any) => parseInt(a.divisionRank) - parseInt(b.divisionRank)));
                     divisions.sort((a: any, b: any) => a.divisionName.localeCompare(b.divisionName));
-
                     finalStandings[conferenceName] = divisions as DivisionStandings[];
                 }
-
-
                 setStandings(finalStandings);
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'An unknown error occurred while fetching standings.');
-                setStandings(null);
+                setError(err instanceof Error ? err.message : 'Standings unavailable.');
             } finally {
                 setLoading(false);
             }
         };
-
         fetchStandings();
     }, []);
 
     return (
         <div>
-            <div className="text-center mb-6">
-                 <h2 className="text-3xl font-bold mb-2">NHL League Standings</h2>
-                 <p className="text-gray-400">Live standings data from the official NHL API.</p>
+            <div className="text-center mb-10">
+                 <h2 className="text-4xl font-black mb-3">League Standings</h2>
+                 <p className="text-gray-400">Battle for the Stanley Cup Playoff seeding.</p>
             </div>
-
-            {loading && <LoadingSpinner text="Fetching standings..." />}
-            {error && <p className="text-center text-red-500 bg-red-900/50 p-4 rounded-lg">{error}</p>}
+            {loading && <LoadingSpinner text="Crunching numbers..." />}
+            {error && <div className="text-center"><p className="inline-block text-red-500 bg-red-900/20 px-6 py-3 rounded-lg border border-red-500/50">{error}</p></div>}
             
-            {/* FIX: Use Object.keys to iterate over standings. This avoids a TypeScript type inference issue with Object.entries on a Record type, which was causing the 'divisions' variable to be typed as 'unknown'. */}
-            {standings && Object.keys(standings).sort((a, b) => a.localeCompare(b)).map((conference) => (
-                <section key={conference} className="mb-10">
-                    <h2 className="text-2xl font-extrabold mb-4 text-center tracking-wide uppercase">{conference} Conference</h2>
-                    {standings[conference].map(division => (
-                        <StandingsTable key={division.divisionName} division={division} />
-                    ))}
+            {standings && Object.keys(standings).sort().map((conf) => (
+                <section key={conf} className="mb-12">
+                    <h2 className="text-2xl font-black mb-6 flex items-center gap-3">
+                        <span className="h-px flex-1 bg-gradient-to-r from-transparent to-gray-700"></span>
+                        <span className="uppercase tracking-widest text-indigo-400">{conf} Conference</span>
+                        <span className="h-px flex-1 bg-gradient-to-l from-transparent to-gray-700"></span>
+                    </h2>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        {standings[conf].map(division => (
+                            <StandingsTable key={division.divisionName} division={division} />
+                        ))}
+                    </div>
                 </section>
             ))}
         </div>

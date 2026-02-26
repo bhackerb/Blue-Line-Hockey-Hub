@@ -1,15 +1,16 @@
+
 import React, { useState } from 'react';
 import EmbeddedView from '../components/EmbeddedView';
 
-type AnalyticsSubTab = 'games' | 'rankings' | 'lines';
+type NSTSubTab = 'games' | 'teams' | 'players';
 
-const AnalyticsView: React.FC = () => {
-    const [subTab, setSubTab] = useState<AnalyticsSubTab>('games');
+const NaturalStatTrickView: React.FC = () => {
+    const [subTab, setSubTab] = useState<NSTSubTab>('games');
 
-    const tabs: {id: AnalyticsSubTab; label: string; url: string; title: string;}[] = [
-        { id: 'games', label: 'Games', url: 'https://moneypuck.com/index.html', title: 'MoneyPuck - Games' },
-        { id: 'rankings', label: 'Power Rankings', url: 'https://moneypuck.com/power.htm', title: 'MoneyPuck - Power Rankings' },
-        { id: 'lines', label: 'Lines', url: 'https://moneypuck.com/lines.htm', title: 'MoneyPuck - Lines' },
+    const tabs: {id: NSTSubTab; label: string; url: string; title: string;}[] = [
+        { id: 'games', label: 'Games', url: 'https://www.naturalstattrick.com/games.php', title: 'Natural Stat Trick - Game Scores' },
+        { id: 'teams', label: 'Teams', url: 'https://www.naturalstattrick.com/teamtable.php', title: 'Natural Stat Trick - Team Stats' },
+        { id: 'players', label: 'Players', url: 'https://www.naturalstattrick.com/playerteams.php', title: 'Natural Stat Trick - Player Stats' },
     ];
 
     const activeTabData = tabs.find(t => t.id === subTab)!;
@@ -17,9 +18,9 @@ const AnalyticsView: React.FC = () => {
     return (
         <div>
             <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold mb-2">Advanced NHL Analytics</h2>
+                <h2 className="text-3xl font-bold mb-2">Natural Stat Trick</h2>
                 <p className="text-gray-400">
-                    In-depth stats and models from <a href="https://moneypuck.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">MoneyPuck.com</a>.
+                    Comprehensive underlying metrics and game stats from <a href="https://www.naturalstattrick.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">NaturalStatTrick.com</a>.
                 </p>
             </div>
 
@@ -49,4 +50,4 @@ const AnalyticsView: React.FC = () => {
     );
 };
 
-export default AnalyticsView;
+export default NaturalStatTrickView;

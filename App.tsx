@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import Header from './components/Header';
 import TabView from './components/TabView';
 import ScoresView from './views/ScoresView';
-import AnalyticsView from './views/AnalyticsView';
+import MoneyPuckView from './views/MoneyPuckView';
+import NaturalStatTrickView from './views/NaturalStatTrickView';
 import LineupsView from './views/LineupsView';
 import StandingsView from './views/StandingsView';
 import HighlightsView from './views/HighlightsView';
@@ -26,8 +28,10 @@ const App: React.FC = () => {
         return <StandingsView />;
       case 'statCards':
         return <StatCardsView />;
-      case 'analytics':
-        return <AnalyticsView />;
+      case 'moneypuck':
+        return <MoneyPuckView />;
+      case 'naturalStatTrick':
+        return <NaturalStatTrickView />;
       case 'lineups':
         return <LineupsView />;
       case 'puckpedia':

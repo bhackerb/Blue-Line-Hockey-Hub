@@ -33,14 +33,12 @@ const ScoresView: React.FC = () => {
         setError(null);
         
         const formattedDate = formatDateForAPI(date);
-        
-        // Always use the schedule endpoint for the specific date.
-        // This avoids issues with 'score/now' returning yesterday's games during late-night hours.
-        const url = `https://corsproxy.io/?${encodeURIComponent(`https://api-web.nhle.com/v1/schedule/${formattedDate}`)}`;
+        const apiUrl = `https://api-web.nhle.com/v1/schedule/${formattedDate}`;
+        const url = apiUrl;
 
         try {
             const response = await fetch(url).catch(() => {
-                throw new Error('Could not connect to the data proxy. The service may be temporarily unavailable.');
+                throw new Error('Network error: Could not reach the NHL API.');
             });
 
             if (!response.ok) {
@@ -48,14 +46,13 @@ const ScoresView: React.FC = () => {
                     setGames([]);
                     return;
                 }
-                 throw new Error(`The data proxy or NHL API returned an error (status: ${response.status}).`);
+                 throw new Error(`The NHL API returned an error (status: ${response.status}).`);
             }
             
             const data = await response.json().catch(() => {
-                throw new Error('Failed to parse data from the NHL API. The API may have returned an invalid format.');
+                throw new Error('Failed to parse schedule data. The API response was invalid.');
             });
 
-            // The schedule API returns a gameWeek. We must find the entry matching our requested local date.
             const dayData = data.gameWeek?.find((day: any) => day.date === formattedDate);
             const dailyGames = Array.isArray(dayData?.games) ? dayData.games : [];
             
@@ -90,9 +87,9 @@ const ScoresView: React.FC = () => {
         <div>
             <DateNavigator date={date} setDate={setDate} />
             {loading && <LoadingSpinner />}
-            {error && <p className="text-center text-red-500 bg-red-900/50 p-4 rounded-lg">{error}</p>}
+            {error && <div className="text-center mb-6"><p className="inline-block text-red-500 bg-red-900/20 px-6 py-3 rounded-lg border border-red-500/50">{error}</p></div>}
             {!loading && !error && games.length === 0 && (
-                 <div className="text-center text-gray-400 mt-8 bg-gray-800 p-8 rounded-lg">
+                 <div className="text-center text-gray-400 mt-8 bg-gray-800/30 p-12 rounded-xl border border-gray-700/50">
                     <h3 className="text-2xl font-bold mb-2">No Games Scheduled</h3>
                     <p>There are no games scheduled for this date.</p>
                 </div>
